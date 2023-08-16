@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone = "no"?>
+
+  <!-- partition 0 -->
+  <Partition Identifier="0" Name="p0">
+
+    <BuildConfiguration>
+
+      	<Personality Name="BARE">
+			  <BareConfiguration EntryPoint="entry_point" CodeMemoryRegion="0" DataMemoryRegion="1"/>
+		</Personality> 	
+
+		<Libraries>
+			<Library Name="LIBXKY" Options=""/>
+			<Library Name="LIBPRINTF"  Options=""/>
+		</Libraries>
+
+    </BuildConfiguration>
+
+     	<MemoryMap>
+		    <Region Identifier="0" Name="code" Permissions="RX" CacheAttributes="COPY_BACK"/>
+		    <Region Identifier="1" Name="data" Permissions="RW" CacheAttributes="WRITE_THROUGH"/>
+			<Region Identifier="2" Name="CM_PER" Permissions="RW" CacheAttributes="DEVICE"/>
+			<Region Identifier="3" Name="I2C1" Permissions="RW" CacheAttributes="DEVICE"/>
+			<Region Identifier="4" Name="CTRLMOD" Permissions="RW" CacheAttributes="DEVICE"/>
+		</MemoryMap>
+
+  </Partition>
+

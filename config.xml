@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XKYModule Name="master" Version = "1" Targets = "arm-bbb">
+
+<ModulePartitions>
+  <!-- partition 0 -->
+  <Partition Identifier="0" Name="p0" Cores ="1"
+                                                       Configuration = "p0/partition_0.xml">
+          <Permissions>SET_PARTITION</Permissions>
+
+  </Partition>
+</ModulePartitions>
+   
+  <!-- schedule 0 -->
+  <ModuleSchedules>
+    <Schedule Identifier="1" Name="schedule" MajorFrame="10">
+        <PartitionSchedule PartitionIdentifier="0">
+            <Window Offset="0" Duration = "1"/>
+        </PartitionSchedule>
+    </Schedule>
+  </ModuleSchedules>
+  
+	<ModuleMemoryMap>
+    <PartitionMemoryMap PartitionIdentifier = "0">
+      <Region Identifier="0" Size="1Mb" />
+        <Region Identifier="1" Size="1Mb" />
+        <Region Identifier="2" PhysicalAddress="CM_PER" />
+        <Region Identifier="3" PhysicalAddress="I2C1" />
+        <Region Identifier="4" PhysicalAddress="CTRLMOD"  />
+		</PartitionMemoryMap>
+	</ModuleMemoryMap>
+  </XKYModule>
