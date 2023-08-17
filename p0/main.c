@@ -27,10 +27,9 @@ int i2c_master_receive(unsigned int dev_id, unsigned int slave_addr, char *data,
 //Defnição de registos
 char own_addr = 0x40;
 char temp_sensor_addr = 0x18;
-char read_temp_register[] = {0x30,0x05};
+char read_temp_register[] = {0x30,0x05,0x07,0x09};
 
-int i2c_instance = 1;
-
+int i2c_instance = 2;
 
 /**
  * @brief Partition Entry point
@@ -44,7 +43,7 @@ int entry_point() {
     xky_syscall_arm_enable_interrupts();
 
     //Initializes bus of I2C and gives address ox40 to this device
-    i2c_init(1,0x40); //Mudar eventualmente para identificação do endereço
+    i2c_init(i2c_instance,0x40); //Mudar eventualmente para identificação do endereço
 
     xky_printf("DONE\n");
 
@@ -52,15 +51,15 @@ int entry_point() {
 
         while (1) {
             
-            int size = 2;
-
+            int size = 4;
 
             float temperature;
+
             //Print to warn about send
-            int bytes_sent = i2c_master_send(i2c_instance,temp_sensor_addr,read_temp_register,size);
+            int bytes_sent = i2c_master_send(i2c_instance,0x18,read_temp_register,size);
             
             //Verificação de envio
-            if(bytes_sent != 1){
+            if(bytes_sent != size){
                 xky_printf("[ERROR] Expected to send 1 byte, sent %d instead\n", bytes_sent);
             }
             else{

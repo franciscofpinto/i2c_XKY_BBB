@@ -20,7 +20,7 @@
 		    <Region Identifier="0" Name="code" Permissions="RX" CacheAttributes="COPY_BACK"/>
 		    <Region Identifier="1" Name="data" Permissions="RW" CacheAttributes="WRITE_THROUGH"/>
 			<Region Identifier="2" Name="CM_PER" Permissions="RW" CacheAttributes="DEVICE"/>
-			<Region Identifier="3" Name="I2C1" Permissions="RW" CacheAttributes="DEVICE"/>
+			<Region Identifier="3" Name="I2C2" Permissions="RW" CacheAttributes="DEVICE"/>
 			<Region Identifier="4" Name="CTRLMOD" Permissions="RW" CacheAttributes="DEVICE"/>
 		</MemoryMap>
 
