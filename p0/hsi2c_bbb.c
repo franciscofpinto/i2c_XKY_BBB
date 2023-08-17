@@ -83,6 +83,24 @@ void I2CPinMuxSetup(unsigned int instance)
                CONTROL_CONF_MUXMODE(2));
     }
 
+    else if(instance == 2)
+    {
+                               /* I2C_SCLK */
+                               xky_printf("Setting SCL\n");
+         HWREG(memory_status_clk_md.address + CONTROL_CONF_UART_RTSN(1))  =
+              (CONTROL_CONF_UART1_RTSN_CONF_UART1_RTSN_PUTYPESEL |
+               CONTROL_CONF_UART1_RTSN_CONF_UART1_RTSN_RXACTIVE  |
+               CONTROL_CONF_UART1_RTSN_CONF_UART1_RTSN_SLEWCTRL  |
+               CONTROL_CONF_MUXMODE(3));
+                              /* I2C_SDA */
+                              xky_printf("Setting SDA\n");
+         HWREG(memory_status_clk_md.address + CONTROL_CONF_UART_CTSN(1)) =
+              (CONTROL_CONF_UART1_CTSN_CONF_UART1_CTSN_PUTYPESEL |
+               CONTROL_CONF_UART1_CTSN_CONF_UART1_CTSN_RXACTIVE  |
+               CONTROL_CONF_UART1_CTSN_CONF_UART1_CTSN_SLEWCTRL  |
+               CONTROL_CONF_MUXMODE(3));
+    }
+
 }
 
 /**
@@ -370,3 +388,89 @@ void I2C0ModuleClkConfig(void)
            CM_WKUP_I2C0_CLKCTRL_IDLEST));
 }
 
+/*
+** This function enables the system L3 and system L4_WKUP clocks.
+** This also enables the clocks for I2C instance.
+*/
+
+void I2C2ModuleClkConfig(void)
+{
+   xky_id_t memory_id_clk_md = xky_syscall_get_memory_id("CM_PER");
+      //if (memory_id_clk_md >= 0) {
+        xky_memory_status_t memory_status_clk_md;
+        xky_syscall_get_memory_status(memory_id_clk_md, &memory_status_clk_md);
+        //CKM_iniCtrlAddress(memory_status_clk_md.address);
+        xky_printf("CM_PER at %08x\n", memory_status_clk_md.address);
+    //}
+      // L3 stuff
+            //SOC_PRCM_REGS
+
+ HWREG(memory_status_clk_md.address + CM_PER_L3S_CLKSTCTRL) |=
+                             CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L3S_CLKSTCTRL) &
+     CM_PER_L3S_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+
+    HWREG(memory_status_clk_md.address + CM_PER_L3_CLKSTCTRL) |=
+                             CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L3_CLKSTCTRL) &
+     CM_PER_L3_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+
+    HWREG(memory_status_clk_md.address + CM_PER_L3_INSTR_CLKCTRL) |=
+                             CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L3_INSTR_CLKCTRL) &
+                               CM_PER_L3_INSTR_CLKCTRL_MODULEMODE) !=
+                                   CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE);
+
+    HWREG(memory_status_clk_md.address + CM_PER_L3_CLKCTRL) |=
+                             CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L3_CLKCTRL) &
+        CM_PER_L3_CLKCTRL_MODULEMODE) != CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE);
+
+    HWREG(memory_status_clk_md.address + CM_PER_OCPWP_L3_CLKSTCTRL) |=
+                             CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_OCPWP_L3_CLKSTCTRL) &
+                              CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL) !=
+                                CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+
+      // L4 stuff
+    HWREG(memory_status_clk_md.address + CM_PER_L4LS_CLKSTCTRL) |=
+                             CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L4LS_CLKSTCTRL) &
+                             CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL) !=
+                               CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+
+    HWREG(memory_status_clk_md.address + CM_PER_L4LS_CLKCTRL) |=
+                             CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE;
+
+    while((HWREG(memory_status_clk_md.address + CM_PER_L4LS_CLKCTRL) &
+      CM_PER_L4LS_CLKCTRL_MODULEMODE) != CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE);
+
+      // I2C2 stuff
+            xky_printf("\nInitin Clock 2\n");
+    HWREG(memory_status_clk_md.address  + CM_PER_I2C2_CLKCTRL) |=
+                             CM_PER_I2C2_CLKCTRL_MODULEMODE_ENABLE;
+
+      xky_printf("waiting\n");
+    while((HWREG(memory_status_clk_md.address + CM_PER_I2C2_CLKCTRL) &
+      CM_PER_I2C2_CLKCTRL_MODULEMODE) != CM_PER_I2C2_CLKCTRL_MODULEMODE_ENABLE);
+
+    while(!(HWREG(memory_status_clk_md.address + CM_PER_L3S_CLKSTCTRL) &
+            CM_PER_L3S_CLKSTCTRL_CLKACTIVITY_L3S_GCLK));
+
+    while(!(HWREG(memory_status_clk_md.address + CM_PER_L3_CLKSTCTRL) &
+            CM_PER_L3_CLKSTCTRL_CLKACTIVITY_L3_GCLK));
+
+    while(!(HWREG(memory_status_clk_md.address + CM_PER_OCPWP_L3_CLKSTCTRL) &
+           (CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L3_GCLK |
+            CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L4_GCLK)));
+
+    while(!(HWREG(memory_status_clk_md.address + CM_PER_L4LS_CLKSTCTRL) &
+           (CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_L4LS_GCLK |
+            CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_I2C_FCLK)));
+}

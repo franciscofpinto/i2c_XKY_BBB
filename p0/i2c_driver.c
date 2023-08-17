@@ -231,7 +231,12 @@ void i2c_init(unsigned int dev_id, unsigned int address) {
 
     /* Enable the clock for I2C1 and configure respective pins*/
     //xky_printf("\nConfigurating module clock\n");
-    I2C1ModuleClkConfig();
+    if(dev_id == 1){
+        I2C1ModuleClkConfig();
+    }else{
+        I2C2ModuleClkConfig();
+    }
+    
     //xky_printf("\niniting pin mux\n");
     I2CPinMuxSetup(dev_id);
     //xky_printf("\ndoing soft reset\n");
