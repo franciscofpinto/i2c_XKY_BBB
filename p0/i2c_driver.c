@@ -96,7 +96,7 @@ static inline unsigned int i2c_status_poll(unsigned int dev_addr, unsigned int m
     unsigned int status = 0x0;
     while (((status = i2c_get_status(dev_addr)) & mask) == 0) {
         if (++timeout > I2C_TIMEOUT) {
-            xky_printf("Time_out");
+            xky_printf("Time_out\n");
             return 0;
         }
     }
@@ -107,6 +107,7 @@ static inline unsigned int i2c_status_poll(unsigned int dev_addr, unsigned int m
 static inline void i2c_write_byte(unsigned int dev_addr, char byte) {
 
     HWREG(dev_addr + I2C_DATA) = byte;
+    xky_printf("Valor do i2c_write_byte = %x\n", byte);
 }
 
 
@@ -253,7 +254,6 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
     /* get base device address */
     unsigned int dev_addr = get_base_addr(dev_id);
 
-
     /* check if the bus is free */
     if (i2c_is_bus_free(dev_addr) == 0) {
         return -1;
@@ -264,9 +264,11 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
     /* set the data count and slave address */
     xky_printf("Set target address\n");
     HWREG(dev_addr + I2C_CNT) = (unsigned int)nbyte;
-    //HWREG(dev_addr + I2C_SA) = slave_addr;
 
-    HWREG(dev_addr + I2C_SA) = 0x30;
+    HWREG(dev_addr + I2C_SA) = slave_addr;
+
+    //HWREG(dev_addr + I2C_SA) = 0x30;
+    
 
     /* clear i2c status; set enable, master, transmission mode, start condition and stop conditions) */
     xky_printf("Clear status\n");
@@ -283,9 +285,7 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         //xky_printf("polling\n");
         unsigned int status = i2c_status_poll(dev_addr, I2C_STATUS_XRDY | I2C_STATUS_ERROR);
 
-        int bytes_left =  HWREG(dev_addr + I2C_CNT);
-        xky_printf("Poll do registo DCOUNT = %d\n",bytes_left);
-
+        
         /* check if there's error in bus */
         /* could be interesting to just check the NACK bit*/
         //xky_printf("check error in bus\n");
@@ -300,13 +300,14 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
        // xky_printf("check bus is ready to write\n");
         if ((status & I2C_STATUS_XRDY) != 0) {
             xky_printf("bus ready to write\n");
-            //i2c_write_byte(dev_addr, data[sent]);
 
-            xky_printf(" Value of data sent = %08x\n",data[sent]);
+            i2c_write_byte(dev_addr, data[sent]);
+
+            xky_printf(" Value of data = %08x\n",data[sent]);
 
             //unsigned int data_sent = HWREG(dev_addr + I2C_DATA);
 
-            HWREG(dev_addr + I2C_DATA) = 0;
+            //HWREG(dev_addr + I2C_DATA) = 0;
             
             //xky_printf(" Register %08x\n",data_sent);
             //i2c_write_byte(((dev_addr<<1) & 0xFE), 0x05);
@@ -317,8 +318,10 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 
              int bufstat = HWREG(dev_addr + I2C_BUFSTAT);
                 xky_printf("Bufstat = %x\n", bufstat);
+
+                 int bytes_left =  HWREG(dev_addr + I2C_CNT);
+        xky_printf("Poll do registo DCOUNT = %d\n",bytes_left);
         
-            
             continue;
         }
 
@@ -329,6 +332,9 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         i2c_soft_reset(dev_addr);
         return -1;
     }
+
+      
+
 
     /*check if the operation is complete */
     
@@ -469,6 +475,7 @@ int i2c_slave_write(unsigned int dev_id, char *data, int nbyte) {
         /* ready to write */
         if ((status & I2C_STATUS_XRDY) != 0) {
             i2c_write_byte(dev_addr, data[sent++]);
+            
             i2c_clear_status(dev_addr, I2C_STATUS_XRDY);
             continue;
         }

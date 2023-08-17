@@ -24,7 +24,7 @@
       <Region Identifier="0" Size="1Mb" />
         <Region Identifier="1" Size="1Mb" />
         <Region Identifier="2" PhysicalAddress="CM_PER" />
-        <Region Identifier="3" PhysicalAddress="I2C1" />
+        <Region Identifier="3" PhysicalAddress="I2C2" />
         <Region Identifier="4" PhysicalAddress="CTRLMOD"  />
 		</PartitionMemoryMap>
 	</ModuleMemoryMap>
