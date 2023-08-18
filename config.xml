@@ -12,7 +12,7 @@
    
   <!-- schedule 0 -->
   <ModuleSchedules>
-    <Schedule Identifier="1" Name="schedule" MajorFrame="10">
+    <Schedule Identifier="1" Name="schedule" MajorFrame="1">
         <PartitionSchedule PartitionIdentifier="0">
             <Window Offset="0" Duration = "1"/>
         </PartitionSchedule>

@@ -316,11 +316,11 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
             xky_printf("clear status\n");
             i2c_clear_status(dev_addr, I2C_STATUS_XRDY);
 
-             int bufstat = HWREG(dev_addr + I2C_BUFSTAT);
-                xky_printf("Bufstat = %x\n", bufstat);
+            int bufstat = HWREG(dev_addr + I2C_BUFSTAT);
+             xky_printf("Bufstat = %x\n", bufstat);
 
-                 int bytes_left =  HWREG(dev_addr + I2C_CNT);
-        xky_printf("Poll do registo DCOUNT = %d\n",bytes_left);
+            int bytes_left =  HWREG(dev_addr + I2C_CNT);
+                xky_printf("Poll do registo DCOUNT = %d\n",bytes_left);
         
             continue;
         }
@@ -333,8 +333,7 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         return -1;
     }
 
-      
-
+    
 
     /*check if the operation is complete */
     
