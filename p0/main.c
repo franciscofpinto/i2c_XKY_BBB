@@ -9,13 +9,7 @@
 #include <bare.h>
 #include <xky_printf.h> 
 #include <i2c_driver.h>
-
 #include "gpio_v2.h"
-
-// #include <clock_module.h>
-// #include <control_module.h>
-// #include <GPIO.h>
-// #include <pad.h>
 
 #define BUFFER_LEN                          (100)
 
@@ -24,12 +18,16 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 int i2c_master_receive(unsigned int dev_id, unsigned int slave_addr, char *data, int nbyte);
 float MCP9808_temp_calculation();
 int message_sent_verification(int bytes_sent, int size);
+void MPU6505_accelerometer_calculation();
 
 
-char own_addr = 0x40;                   //BBB address
-char temp_sensor_addr = 0x18;           //MCP9808 default address
-char read_temp_register[] = {0x05};     //Temperature access register of MCP9808
-int i2c_instance = 2;                   //IC2-2
+char own_addr = 0x40;                           //BBB address
+char temp_sensor_addr = 0x18;                   //MCP9808 default address
+char read_temp_register[] = {0x05};             //Temperature access register of MCP9808
+int i2c_instance = 2;                           //IC2-2
+char accelerometer_sensor_addr = 0x68;          //MPU6505 default address
+char read_accelerometer_register[] = {0x3B};    //Accelerometer values access register of MCP9808
+char accelerometer_config_register = 0x6B;      //PWR_MGMT_1 register. Allows to configure the power mode of the MPU.
 
 /**
  * @brief Partition Entry point
@@ -39,7 +37,7 @@ int entry_point() {
 
     xky_printf("    :: Enabling I2C as master... "); 
 
-    //enable interrupts
+    //Enable interrupts
     xky_syscall_arm_enable_interrupts();
 
     //Initializes bus of I2C and gives address ox40 to this device
@@ -53,6 +51,9 @@ int entry_point() {
 
         //Prints de value of the temperature read by MCP9808 
         xky_printf("Temperature = %f\n",temperature);
+
+        //Starts MPU6505 calculation
+        MPU6505_accelerometer_calculation();
 
         //Partition in sleep mode until next widnow 
         bare_wake_in_next_window();             
@@ -116,6 +117,65 @@ float MCP9808_temp_calculation(){
 
 return temperature;
             
+}
+
+/**
+ * @brief MPU6505 initialization
+ * @return 
+ */
+void MPU6505_initialization(){
+
+    int size_of_bytes_sent = 1;
+
+    //Telling the MPU which register we are writing to (PWR_MGMT_1 register)  
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,accelerometer_config_register,size_of_bytes_sent);
+
+    //Configuration of the Gyroscope. According to page 14 of the register map, the register holding the GYRO_CONFIG settings is located at 0x1B
+    //Bit0 - Reserved, set to 0
+    //Bit1 - Reserved, set to 0
+    //Bit2 - Reserved, set to 0
+    //Bit3 - FS_SEL
+    //Bit4 - FS_SEL  -  This sets the full scale range of the gyroscope. 
+    //Bit5 - ZG_ST - Activates self test of gyroscope Z axis if set to 1. 
+    //Bit6 - YG_ST - same as ZG_ST but with Y axis
+    //Bit7 - XG_ST - same as ZG_ST but with X axis
+    //According to those values, we want to send the value 0 0 0 1 0 0 0 0, which is hex 0x10
+    char config_data[] = {0x10};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,config_data,size_of_bytes_sent);
+
+}
+
+/**
+ * @brief MPU6505 data calculations
+ * @return 
+ */
+void MPU6505_accelerometer_calculation(){
+
+    //Initializes MPU6505 sensor
+    void MPU6505_initialization();
+
+    int size_of_bytes_sent = 1;
+    int bytes_sent = i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register,size_of_bytes_sent);
+
+    int size_of_bytes_received = 2;
+    char data_received[] = {0x00,0x00};
+    int bytes_received = i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
+
+    if(message_sent_verification(bytes_sent,size_of_bytes_sent) == 1 ){
+
+        char XAxis_H = data_received[0];
+        char XAxis_L = data_received[1];
+
+        xky_printf("XAxis = %02x\n",XAxis_H);
+        xky_printf("XAxis = %02x\n",XAxis_L);
+
+        //Turn our 8 bit Bytes into a 16 bit integer
+        char XAxis_FULL = ((XAxis_H & 0xFF) * 256) | XAxis_L;
+
+        xky_printf("XAxis_FULL = %x\n",XAxis_L);
+        
+    }
+
 }
 
    

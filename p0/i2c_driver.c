@@ -205,14 +205,12 @@ static inline int i2c_is_bus_free(unsigned int dev_addr) {
 static inline int i2c_is_device_ready(unsigned int dev_addr) {
 
     volatile int timeout = 0;
-    //xky_printf("is ready ");
+    
     while ((HWREG(dev_addr + I2C_IRQSTATUS_RAW) & I2C_STATUS_ARDY) == 0) {
         if (++timeout > I2C_TIMEOUT) {
-    //        xky_printf("[NO]\n");
             return 0;
         }
     }
-    //xky_printf("[YES]\n");
     return 1;
 }
 
@@ -231,16 +229,14 @@ void i2c_init(unsigned int dev_id, unsigned int address) {
     __i2c_own_address = address;
 
     /* Enable the clock for I2C1 and configure respective pins*/
-    //xky_printf("\nConfigurating module clock\n");
     if(dev_id == 1){
         I2C1ModuleClkConfig();
     }else{
         I2C2ModuleClkConfig();
     }
     
-    //xky_printf("\niniting pin mux\n");
     I2CPinMuxSetup(dev_id);
-    //xky_printf("\ndoing soft reset\n");
+    
     /* reset module */
     i2c_soft_reset(dev_addr);
 }
@@ -267,9 +263,6 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 
     HWREG(dev_addr + I2C_SA) = slave_addr;
 
-    //HWREG(dev_addr + I2C_SA) = 0x30;
-    
-
     /* clear i2c status; set enable, master, transmission mode, start condition and stop conditions) */
     xky_printf("Clear status\n");
     i2c_clear_status(dev_addr, I2C_STATUS_ALL);
@@ -277,18 +270,15 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
        (I2C_CON_I2C_EN | I2C_CON_MST | I2C_CON_TRX | I2C_CON_STT | I2C_CON_STP);//enable 1 bits
 
     /* send full message loop */
-    //xky_printf("Looping\n");
     int sent = 0;
     while (sent < nbyte) {
 
         /* poll status */
-        //xky_printf("polling\n");
         unsigned int status = i2c_status_poll(dev_addr, I2C_STATUS_XRDY | I2C_STATUS_ERROR);
 
         
         /* check if there's error in bus */
         /* could be interesting to just check the NACK bit*/
-        //xky_printf("check error in bus\n");
         if ((status & I2C_STATUS_ERROR) != 0) {
             xky_printf("Valor no status = %x\n",status);
             xky_printf("error in bus\n");
@@ -297,7 +287,6 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         }
 
         /* check if bus is ready to write */
-       // xky_printf("check bus is ready to write\n");
         if ((status & I2C_STATUS_XRDY) != 0) {
             xky_printf("bus ready to write\n");
 
@@ -305,12 +294,6 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 
             xky_printf(" Value of data = %08x\n",data[sent]);
 
-            //unsigned int data_sent = HWREG(dev_addr + I2C_DATA);
-
-            //HWREG(dev_addr + I2C_DATA) = 0;
-            
-            //xky_printf(" Register %08x\n",data_sent);
-            //i2c_write_byte(((dev_addr<<1) & 0xFE), 0x05);
             sent++;
             
             xky_printf("clear status\n");
@@ -333,10 +316,7 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         return -1;
     }
 
-    
-
     /*check if the operation is complete */
-    
     if (i2c_is_device_ready(dev_addr) == 0) {
          xky_printf("device_not_ready\n");
          i2c_soft_reset(dev_addr);
