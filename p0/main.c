@@ -19,6 +19,7 @@ int i2c_master_receive(unsigned int dev_id, unsigned int slave_addr, char *data,
 float MCP9808_temp_calculation();
 int message_sent_verification(int bytes_sent, int size);
 void MPU6505_accelerometer_calculation();
+void calculate_IMU_error();
 
 
 char own_addr = 0x40;                           //BBB address
@@ -33,14 +34,17 @@ char read_accelerometer_register_YL[] = {0x3E};
 char read_accelerometer_register_ZH[] = {0x3F};
 char read_accelerometer_register_ZL[] = {0x40};
 char gyro_address[] = {0x43};
-
 char acc_reset[] = {0x6B,0x00};
-
 char gyro_config[] = {0x1B,0x08};               //Gyro config address and set FS_SEL to the +-1000°/s 
 char acc_config[] = {0x1C,0x00};                 //Acc config address
 char enable_fifo[] = {0x23,0x08};               //Enable FIFO
-
 char  gyroscope_measurements_X[] = {0x43};
+
+float GyroError_X;
+float GyroError_Y;
+float GyroError_Z;
+float AccError_X;
+float AccError_Y;
 
 
 /**
@@ -67,7 +71,9 @@ int entry_point() {
         // xky_printf("Temperature = %f\n",temperature);
 
         //Starts MPU6505 calculation
-        MPU6505_accelerometer_calculation();
+        //MPU6505_accelerometer_calculation();
+
+        calculate_IMU_error();
 
         //Partition in sleep mode until next widnow 
         bare_wake_in_next_window();             
@@ -172,6 +178,9 @@ void MPU6505_accelerometer_calculation(){
     //Power reset do MPU6505
     int bytes_sent =i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_reset,2);
 
+    //// Call this function to get the IMU error values
+    calculate_IMU_error();
+
     //=== Read accelrometer data === //
     //Leitura eixo X_H
     int size_of_bytes_sent = 1;
@@ -219,8 +228,9 @@ void MPU6505_accelerometer_calculation(){
     xky_printf("YAxis_FULL = %f\n",YAxisFull);
     xky_printf("ZAxis_FULL = %f\n",ZAxisFull);
 
-    // float accAngle_X = (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14) - 0.58;
-    // xky_printf("accAngle_X = %f\n",accAngle_X);
+    float accAngle_X = (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14) - AccError_X;
+    float accAngle_Y = (atan(-1 * YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14) + AccError_Y; // AccErrorY ~(-1.58)
+   
 
     //=== Read gyroscope data === //
      bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
@@ -263,6 +273,129 @@ void MPU6505_accelerometer_calculation(){
 
 
 
+}
+
+void calculate_IMU_error() {
+
+  // We can call this funtion to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial.
+  // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
+  // Read accelerometer values 200 times
+  
+  int c = 0;
+  while (c < 200) {
+
+     //=== Read accelrometer data === //
+    //Leitura eixo X_H
+    int size_of_bytes_sent = 1;
+    int bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
+    int size_of_bytes_received = 1;
+    char data_received[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
+    char XAxis_H = data_received[0];
+   
+    //Leitura eixo X_L
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
+    char data_received1[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received1,size_of_bytes_received);     
+    char XAxis_L = data_received1[0];
+    float XAxisFull = ((XAxis_H << 8) | XAxis_L) / 16384.0;
+     
+    //Leitura eixo Y_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
+    char data_received2[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received);
+    char YAxis_H = data_received2[0];
+    
+    //Leitura eixo Y_L
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
+    char data_received3[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received3,size_of_bytes_received);
+    char YAxis_L = data_received3[0];
+    float YAxisFull = ((YAxis_H << 8) | YAxis_L) / 16384.0;
+    
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
+    char data_received4[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received4,size_of_bytes_received);
+    char ZAxis_H = data_received4[0];
+    
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
+    char data_received5[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received5,size_of_bytes_received);
+    char ZAxis_L = data_received5[0];
+    float ZAxisFull = ((ZAxis_H << 8) | ZAxis_L) / 16384.0 ;
+
+    // Sum all readings
+    AccError_X = AccError_X + (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14);
+    AccError_Y = AccError_Y + ((atan(-1 * (XAxisFull) / sqrt(pow((YAxisFull), 2) + pow((ZAxisFull), 2))) * 180 / 3.14));
+    c++;
+  }
+
+  //Divide the sum by 200 to get the error value
+  AccError_X = AccError_X / 200;
+  AccError_Y = AccError_Y / 200;
+  c = 0;
+
+  // Read gyro values 200 times
+  while (c < 200) {
+
+    //=== Read gyroscope data === //
+    int size_of_bytes_sent = 1;
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XH[] = {0x00};
+    int size_of_bytes_received = 1;
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XH,size_of_bytes_received);
+    char GyroXH = data_received_gyro_XH[0];
+
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XL,size_of_bytes_received);
+    char GyroXL= data_received_gyro_XL[0];
+    float GyroXFull = ((GyroXH << 8) | GyroXL) / 131.0;
+
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YH,size_of_bytes_received);
+    char GyroYH = data_received_gyro_YH[0];
+
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YL,size_of_bytes_received);
+    char GyroYL = data_received_gyro_YL[0];
+    float GyroYFull = ((GyroYH << 8) | GyroYL) / 131.0;
+
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZH,size_of_bytes_received);
+    char GyroZH = data_received_gyro_ZH[0];
+
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZL,size_of_bytes_received);
+    char GyroZL = data_received_gyro_ZL[0];
+    float GyroZFull = ((GyroZH << 8) | GyroZL) / 131.0;
+
+    // Sum all readings
+    GyroError_X = GyroError_X + (GyroXFull / 131.0);
+    GyroError_Y = GyroError_Y + (GyroYFull / 131.0);
+    GyroError_Z = GyroError_Z + (GyroZFull / 131.0);
+
+    c++;
+  }
+
+  //Divide the sum by 200 to get the error value
+  GyroError_X = GyroError_X / 200;
+  GyroError_Y = GyroError_Y / 200;
+  GyroError_Z = GyroError_Z / 200;
+
+// Print the error values on the Serial 
+xky_printf("AccErrorX: %f\n",AccError_X);
+xky_printf("AccErrorY: %f\n",AccError_Y);
+xky_printf("GyroError_X: %f\n",GyroError_X);
+xky_printf("GyroError_Y: %f\n",GyroError_Y);
+xky_printf("GyroError_Z: %f\n",GyroError_Z);
+  
 }
 
    
