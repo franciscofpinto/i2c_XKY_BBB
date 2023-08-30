@@ -26,8 +26,22 @@ char temp_sensor_addr = 0x18;                   //MCP9808 default address
 char read_temp_register[] = {0x05};             //Temperature access register of MCP9808
 int i2c_instance = 2;                           //IC2-2
 char accelerometer_sensor_addr = 0x68;          //MPU6505 default address
-char read_accelerometer_register[] = {0x3B};    //Accelerometer values access register of MCP9808
-char accelerometer_config_register = 0x6B;      //PWR_MGMT_1 register. Allows to configure the power mode of the MPU.
+char read_accelerometer_register_XH[] = {0x3B};    //Accelerometer values access register of MPU6505
+char read_accelerometer_register_XL[] = {0x3C}; 
+char read_accelerometer_register_YH[] = {0x3D};
+char read_accelerometer_register_YL[] = {0x3E};
+char read_accelerometer_register_ZH[] = {0x3F};
+char read_accelerometer_register_ZL[] = {0x40};
+char gyro_address[] = {0x43};
+
+char acc_reset[] = {0x6B,0x00};
+
+char gyro_config[] = {0x1B,0x08};               //Gyro config address and set FS_SEL to the +-1000°/s 
+char acc_config[] = {0x1C,0x00};                 //Acc config address
+char enable_fifo[] = {0x23,0x08};               //Enable FIFO
+
+char  gyroscope_measurements_X[] = {0x43};
+
 
 /**
  * @brief Partition Entry point
@@ -46,11 +60,11 @@ int entry_point() {
     xky_printf("DONE\n");
 
     while (1) {
-        //Starts MCP9808 temperature calculations
-        float temperature = MCP9808_temp_calculation();
+        // //Starts MCP9808 temperature calculations
+        // float temperature = MCP9808_temp_calculation();
 
-        //Prints de value of the temperature read by MCP9808 
-        xky_printf("Temperature = %f\n",temperature);
+        // //Prints de value of the temperature read by MCP9808 
+        // xky_printf("Temperature = %f\n",temperature);
 
         //Starts MPU6505 calculation
         MPU6505_accelerometer_calculation();
@@ -94,12 +108,11 @@ float MCP9808_temp_calculation(){
 
     //if the message was sent successfully from the master it starts the calculation of the data
     if(message_sent_verification(bytes_sent,size_of_bytes_sent) == 1 ){
-
         //Prints the hexadecimal value of the data received (Byte 1 and 2)
         xky_printf("Data_received[0] = %02x\n",data_received[0]);
         xky_printf("Data_received[1] = %02x\n",data_received[1]);
 
-        //fetches the signal bit (bit 12) to check if it corresponds to negative temperature values
+        //fetches the signal bit (bit 12) to check if it corresponds to negative or positive temperature values
         is_negative = data_received[0] & 0x10;
 
         //clear threshold flags and signal bits (bit 15 to 12)
@@ -125,23 +138,15 @@ return temperature;
  */
 void MPU6505_initialization(){
 
-    int size_of_bytes_sent = 1;
+    
+    //gyro config
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_config,2);
 
-    //Telling the MPU which register we are writing to (PWR_MGMT_1 register)  
-    i2c_master_send(i2c_instance,accelerometer_sensor_addr,accelerometer_config_register,size_of_bytes_sent);
+    //acc config
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_config,2);
 
-    //Configuration of the Gyroscope. According to page 14 of the register map, the register holding the GYRO_CONFIG settings is located at 0x1B
-    //Bit0 - Reserved, set to 0
-    //Bit1 - Reserved, set to 0
-    //Bit2 - Reserved, set to 0
-    //Bit3 - FS_SEL
-    //Bit4 - FS_SEL  -  This sets the full scale range of the gyroscope. 
-    //Bit5 - ZG_ST - Activates self test of gyroscope Z axis if set to 1. 
-    //Bit6 - YG_ST - same as ZG_ST but with Y axis
-    //Bit7 - XG_ST - same as ZG_ST but with X axis
-    //According to those values, we want to send the value 0 0 0 1 0 0 0 0, which is hex 0x10
-    char config_data[] = {0x10};
-    i2c_master_send(i2c_instance,accelerometer_sensor_addr,config_data,size_of_bytes_sent);
+    //Enable FIFO 
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,enable_fifo,2);
 
 }
 
@@ -151,30 +156,112 @@ void MPU6505_initialization(){
  */
 void MPU6505_accelerometer_calculation(){
 
+
+    //Identificação do endereço do sensor
+    // char who_am_I[] = {0x75}; 
+    // int size_of_bytes_sent = 1;
+    // i2c_master_send(i2c_instance,accelerometer_sensor_addr,who_am_I,size_of_bytes_sent);
+    // int size_of_bytes_received1 = 1;
+    // char data_received2[] = {0x00};
+    // int bytes_received = i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received1);
+    // xky_printf("Endereço do sensor = %02x\n",data_received2[0]);
+
     //Initializes MPU6505 sensor
-    void MPU6505_initialization();
+     //void MPU6505_initialization();
 
+    //Power reset do MPU6505
+    int bytes_sent =i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_reset,2);
+
+    //=== Read accelrometer data === //
+    //Leitura eixo X_H
     int size_of_bytes_sent = 1;
-    int bytes_sent = i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register,size_of_bytes_sent);
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
+    int size_of_bytes_received = 1;
+    char data_received[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
+    char XAxis_H = data_received[0];
+   
+    //Leitura eixo X_L
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
+    char data_received1[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received1,size_of_bytes_received);     
+    char XAxis_L = data_received1[0];
+    float XAxisFull = ((XAxis_H << 8) | XAxis_L) / 16384.0;
+     
+    //Leitura eixo Y_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
+    char data_received2[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received);
+    char YAxis_H = data_received2[0];
+    
+    //Leitura eixo Y_L
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
+    char data_received3[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received3,size_of_bytes_received);
+    char YAxis_L = data_received3[0];
+    float YAxisFull = ((YAxis_H << 8) | YAxis_L) / 16384.0;
+    
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
+    char data_received4[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received4,size_of_bytes_received);
+    char ZAxis_H = data_received4[0];
+    
 
-    int size_of_bytes_received = 2;
-    char data_received[] = {0x00,0x00};
-    int bytes_received = i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
+    char data_received5[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received5,size_of_bytes_received);
+    char ZAxis_L = data_received5[0];
+    float ZAxisFull = ((ZAxis_H << 8) | ZAxis_L) / 16384.0 ;
 
-    if(message_sent_verification(bytes_sent,size_of_bytes_sent) == 1 ){
+    xky_printf("XAxis_FULL = %f\n",XAxisFull);
+    xky_printf("YAxis_FULL = %f\n",YAxisFull);
+    xky_printf("ZAxis_FULL = %f\n",ZAxisFull);
 
-        char XAxis_H = data_received[0];
-        char XAxis_L = data_received[1];
+    // float accAngle_X = (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14) - 0.58;
+    // xky_printf("accAngle_X = %f\n",accAngle_X);
 
-        xky_printf("XAxis = %02x\n",XAxis_H);
-        xky_printf("XAxis = %02x\n",XAxis_L);
+    //=== Read gyroscope data === //
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XH,size_of_bytes_received);
+    char GyroXH = data_received_gyro_XH[0];
 
-        //Turn our 8 bit Bytes into a 16 bit integer
-        char XAxis_FULL = ((XAxis_H & 0xFF) * 256) | XAxis_L;
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XL,size_of_bytes_received);
+    char GyroXL= data_received_gyro_XL[0];
+    float GyroXFull = ((GyroXH << 8) | GyroXL) / 131.0;
 
-        xky_printf("XAxis_FULL = %x\n",XAxis_L);
-        
-    }
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YH,size_of_bytes_received);
+    char GyroYH = data_received_gyro_YH[0];
+
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YL,size_of_bytes_received);
+    char GyroYL = data_received_gyro_YL[0];
+    float GyroYFull = ((GyroYH << 8) | GyroYL) / 131.0;
+
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZH,size_of_bytes_received);
+    char GyroZH = data_received_gyro_ZH[0];
+
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZL,size_of_bytes_received);
+    char GyroZL = data_received_gyro_ZL[0];
+    float GyroZFull = ((GyroZH << 8) | GyroZL) / 131.0;
+
+    xky_printf("GyroXFULL = %f\n",GyroXFull);
+    xky_printf("GyroYFULL = %f\n",GyroYFull);
+    xky_printf("GyroZFULL = %f\n",GyroZFull);
+
+
+
 
 }
 

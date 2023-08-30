@@ -264,7 +264,6 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
     HWREG(dev_addr + I2C_SA) = slave_addr;
 
     /* clear i2c status; set enable, master, transmission mode, start condition and stop conditions) */
-    xky_printf("Clear status\n");
     i2c_clear_status(dev_addr, I2C_STATUS_ALL);
     HWREG(dev_addr + I2C_CON) = \
        (I2C_CON_I2C_EN | I2C_CON_MST | I2C_CON_TRX | I2C_CON_STT | I2C_CON_STP);//enable 1 bits
@@ -280,7 +279,7 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
         /* check if there's error in bus */
         /* could be interesting to just check the NACK bit*/
         if ((status & I2C_STATUS_ERROR) != 0) {
-            xky_printf("Valor no status = %x\n",status);
+           
             xky_printf("error in bus\n");
             i2c_soft_reset(dev_addr);
             return -1;
@@ -288,22 +287,17 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 
         /* check if bus is ready to write */
         if ((status & I2C_STATUS_XRDY) != 0) {
-            xky_printf("bus ready to write\n");
 
             i2c_write_byte(dev_addr, data[sent]);
 
-            xky_printf(" Value of data = %08x\n",data[sent]);
 
             sent++;
             
-            xky_printf("clear status\n");
             i2c_clear_status(dev_addr, I2C_STATUS_XRDY);
 
             int bufstat = HWREG(dev_addr + I2C_BUFSTAT);
-             xky_printf("Bufstat = %x\n", bufstat);
 
             int bytes_left =  HWREG(dev_addr + I2C_CNT);
-                xky_printf("Poll do registo DCOUNT = %d\n",bytes_left);
         
             continue;
         }
@@ -311,14 +305,12 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
 
         /* reset device */
         /* ideally this will happen and only happen if there's no errors and the message is not sent fully */
-        xky_printf("reseting bus\n");
         i2c_soft_reset(dev_addr);
         return -1;
     }
 
     /*check if the operation is complete */
     if (i2c_is_device_ready(dev_addr) == 0) {
-         xky_printf("device_not_ready\n");
          i2c_soft_reset(dev_addr);
          return -1;
      }
