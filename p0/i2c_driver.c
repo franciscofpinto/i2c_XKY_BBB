@@ -37,17 +37,17 @@ static unsigned int get_base_addr(unsigned int instance) {
     xky_id_t memory_id_i2c0 = xky_syscall_get_memory_id("I2C0");
     xky_memory_status_t memory_status_i2c0;
     xky_syscall_get_memory_status(memory_id_i2c0, &memory_status_i2c0);
-    xky_printf("I2C0 at %08x\n", memory_status_i2c0.address);
+    //xky_printf("I2C0 at %08x\n", memory_status_i2c0.address);
 
     xky_id_t memory_id_i2c1 = xky_syscall_get_memory_id("I2C1");
     xky_memory_status_t memory_status_i2c1;
     xky_syscall_get_memory_status(memory_id_i2c1, &memory_status_i2c1);
-    xky_printf("I2C1 at %08x\n", memory_status_i2c1.address);
+    //xky_printf("I2C1 at %08x\n", memory_status_i2c1.address);
 
     xky_id_t memory_id_i2c2 = xky_syscall_get_memory_id("I2C2");
     xky_memory_status_t memory_status_i2c2;
     xky_syscall_get_memory_status(memory_id_i2c2, &memory_status_i2c2);
-    xky_printf("I2C2 at %08x\n", memory_status_i2c2.address);
+    //xky_printf("I2C2 at %08x\n", memory_status_i2c2.address);
 
     switch (instance) {
 
@@ -107,7 +107,7 @@ static inline unsigned int i2c_status_poll(unsigned int dev_addr, unsigned int m
 static inline void i2c_write_byte(unsigned int dev_addr, char byte) {
 
     HWREG(dev_addr + I2C_DATA) = byte;
-    xky_printf("Valor do i2c_write_byte = %x\n", byte);
+    //xky_printf("Valor do i2c_write_byte = %x\n", byte);
 }
 
 
@@ -180,14 +180,14 @@ static void i2c_soft_reset(unsigned int dev_addr) {
 static inline int i2c_is_bus_free(unsigned int dev_addr) {
 
     volatile int timeout = 0;
-    xky_printf("checking bus ");
+    //xky_printf("checking bus ");
     while ((HWREG(dev_addr + I2C_IRQSTATUS_RAW) & I2C_IRQSTATUS_RAW_BB) != 0) {
         if (++timeout > I2C_TIMEOUT) {
-            xky_printf("[BUSY]\n");
+            //xky_printf("[BUSY]\n");
             return 0;
         }
     }
-    xky_printf("[FREE]\n");
+    //xky_printf("[FREE]\n");
     return 1;
 }
 
@@ -258,7 +258,7 @@ int i2c_master_send(unsigned int dev_id, unsigned int slave_addr, char *data, in
     i2c_flush_tx_fifo(dev_addr);
 
     /* set the data count and slave address */
-    xky_printf("Set target address\n");
+    //xky_printf("Set target address\n");
     HWREG(dev_addr + I2C_CNT) = (unsigned int)nbyte;
 
     HWREG(dev_addr + I2C_SA) = slave_addr;
