@@ -72,6 +72,7 @@ int entry_point() {
     i2c_init(i2c_instance,own_addr); 
 
     xky_printf("DONE\n");
+    MPU6505_initialization();
     calculo_OFFSET();
     //calculate_IMU_error();
 
@@ -156,6 +157,7 @@ return temperature;
  */
 void MPU6505_initialization(){
 
+
     //gyro config
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_config,2);
 
@@ -165,6 +167,10 @@ void MPU6505_initialization(){
     //Enable FIFO 
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,enable_fifo,2);
 
+     //Power reset do MPU6505
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_reset,2);
+
+
 }
 
 /**
@@ -172,31 +178,11 @@ void MPU6505_initialization(){
  * @return 
  */
 void MPU6505_accelerometer_calculation(){
-
-
-    //Initializes MPU6505 sensor
-     //void MPU6505_initialization();
-
-    //Enable FIFO 
-    //i2c_master_send(i2c_instance,accelerometer_sensor_addr,enable_fifo,3);
-
-    //Power reset do MPU6505
-    int bytes_sent =i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_reset,2);
-
-     //gyro config
-    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_config,2);
-
-    //acc config
-    i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_config,2);
-
-    
-    //// Call this function to get the IMU error values
-    //calculate_IMU_error();
-    
+ 
     //=== Read accelerometer data === //
     //X axis reading
     int size_of_bytes_sent = 1;
-    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
     int size_of_bytes_received = 1;
     char data_received[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
@@ -204,8 +190,8 @@ void MPU6505_accelerometer_calculation(){
     xky_printf("XAxis_H = %02x\n",XAxis_H);
    
     //Leitura eixo X_L
-    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
-    char data_received1[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
+   char data_received1[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received1,size_of_bytes_received);     
     char XAxis_L = data_received1[0];
     xky_printf("XAxis_L = %02x\n",XAxis_L);
@@ -213,32 +199,32 @@ void MPU6505_accelerometer_calculation(){
     float XAxisFull = (((XAxis_H << 8) | XAxis_L)  * ( total_range / 65535.0)) - maximum_value;
      
     //Leitura eixo Y_H
-    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
-    char data_received2[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
+   char data_received2[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received);
     char YAxis_H = data_received2[0];
     xky_printf("YAxis_H = %02x\n",YAxis_H);
     
     //Leitura eixo Y_L
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
     char data_received3[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received3,size_of_bytes_received);
-    char YAxis_L = data_received3[0];
+     char YAxis_L = data_received3[0];
     xky_printf("YAxis_L = %02x\n",YAxis_L);
     float YAxisFull = (((YAxis_H << 8) | YAxis_L)  *( total_range / 65535.0)) - maximum_value;
     
     //Leitura eixo Z_H
-    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
     char data_received4[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received4,size_of_bytes_received);
     char ZAxis_H = data_received4[0];
     xky_printf("ZAxis_H = %02x\n",ZAxis_H);
     
     //Leitura eixo Z_H
-    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
-    char data_received5[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
+     char data_received5[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received5,size_of_bytes_received);
-    char ZAxis_L = data_received5[0];
+     char ZAxis_L = data_received5[0];
     xky_printf("ZAxis_L = %02x\n",ZAxis_L);
     float ZAxisFull = (((ZAxis_H << 8) | ZAxis_L) *( total_range / 65535.0)) - maximum_value;
 
@@ -253,37 +239,37 @@ void MPU6505_accelerometer_calculation(){
    
 
     //=== Read gyroscope data === //
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
     unsigned char data_received_gyro_XH[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XH,size_of_bytes_received);
     unsigned char GyroXH = data_received_gyro_XH[0];
 
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
     char data_received_gyro_XL[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XL,size_of_bytes_received);
     unsigned char GyroXL= data_received_gyro_XL[0];
-    float GyroXFull = (((GyroXH << 8) | GyroXL) / 131)-500;
+    float GyroXFull = (((GyroXH << 8) | GyroXL) / 131)- 500;
 
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
     unsigned char data_received_gyro_YH[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YH,size_of_bytes_received);
     char GyroYH = data_received_gyro_YH[0];
 
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-    char data_received_gyro_YL[] = {0x00};
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    unsigned char data_received_gyro_YL[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YL,size_of_bytes_received);
-    char GyroYL = data_received_gyro_YL[0];
+    unsigned char GyroYL = data_received_gyro_YL[0];
     float GyroYFull = (((GyroYH << 8) | GyroYL) / 131) - 500;
 
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-    char data_received_gyro_ZH[] = {0x00};
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    unsigned char data_received_gyro_ZH[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZH,size_of_bytes_received);
-    char GyroZH = data_received_gyro_ZH[0];
+    unsigned char GyroZH = data_received_gyro_ZH[0];
 
-     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-    char data_received_gyro_ZL[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    unsigned char data_received_gyro_ZL[] = {0x00};
     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZL,size_of_bytes_received);
-    char GyroZL = data_received_gyro_ZL[0];
+    unsigned char GyroZL = data_received_gyro_ZL[0];
     float GyroZFull = (((GyroZH << 8) | GyroZL) / 131)-500;
 
     xky_printf("GyroXFULL = %f\n",GyroXFull);
@@ -292,171 +278,169 @@ void MPU6505_accelerometer_calculation(){
 
 }
 
-// void calculate_IMU_error() {
+void calculate_IMU_error() {
 
-//   // We can call this funtion to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial.
-//   // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
-//   // Read accelerometer values 200 times
+  // We can call this funtion to calculate the accelerometer and gyro data error. From here we will get the error values used in the above equations printed on the Serial.
+  // Note that we should place the IMU flat in order to get the proper values, so that we then can the correct values
+  // Read accelerometer values 200 times
 
-//     unsigned int XAxis_H = 0;
-//     unsigned int XAxis_L = 0;
-//     unsigned int YAxis_H = 0;
-//     unsigned int YAxis_L = 0;
-//     unsigned int ZAxis_H = 0;
-//     unsigned int ZAxis_L = 0;
+    unsigned int XAxis_H = 0;
+    unsigned int XAxis_L = 0;
+    unsigned int YAxis_H = 0;
+    unsigned int YAxis_L = 0;
+    unsigned int ZAxis_H = 0;
+    unsigned int ZAxis_L = 0;
 
-//   //Power reset do MPU6505
-//     int bytes_sent =i2c_master_send(i2c_instance,accelerometer_sensor_addr,acc_reset,2);
 
-//     //OFFSET = 0
-//     int size_of_bytes_sent = 2;
-//     char XA_OFFSET_H[] = {0x06,0x00};
-//     char endereco_XA_h[] = {0x00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_H,size_of_bytes_sent);
+    //OFFSET = 0
+    int size_of_bytes_sent = 2;
+    char XA_OFFSET_H[] = {0x06,0x00};
+    char endereco_XA_h[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_H,size_of_bytes_sent);
 
-//     char XA_OFFSET_L[] = {0x07,0x00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_L,size_of_bytes_sent);
+    char XA_OFFSET_L[] = {0x07,0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_L,size_of_bytes_sent);
 
-//     char YA_OFFSET_H[] = {0x08,0X00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_H,size_of_bytes_sent);
+    char YA_OFFSET_H[] = {0x08,0X00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_H,size_of_bytes_sent);
 
-//     char YA_OFFSET_L[] = {0x09,0X00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_L,size_of_bytes_sent);
+    char YA_OFFSET_L[] = {0x09,0X00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_L,size_of_bytes_sent);
 
-//     char ZA_OFFSET_H[] = {0x0A,0X00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_H,size_of_bytes_sent);
+    char ZA_OFFSET_H[] = {0x0A,0X00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_H,size_of_bytes_sent);
 
-//     char ZA_OFFSET_L[] = {0x0B,0X00};
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_L,size_of_bytes_sent);
+    char ZA_OFFSET_L[] = {0x0B,0X00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_L,size_of_bytes_sent);
   
-//   int c = 0;
-//   while (c < 200) {
+  int c = 0;
+  while (c < 10) {
 
-//      //=== Read accelrometer data === //
-//     //Leitura eixo X_H
-//     int size_of_bytes_sent = 1;
-//     int bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
-//     int size_of_bytes_received = 1;
-//     char data_received[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
-//     XAxis_H += data_received[0];
+     //=== Read accelrometer data === //
+    //Leitura eixo X_H
+    int size_of_bytes_sent = 1;
+    int bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XH,size_of_bytes_sent);
+    int size_of_bytes_received = 1;
+    char data_received[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received,size_of_bytes_received);
+    XAxis_H += data_received[0];
    
-//     //Leitura eixo X_L
-//     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
-//     char data_received1[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received1,size_of_bytes_received);     
-//     XAxis_L += data_received1[0];
-//     float XAxisFull = ((XAxis_H << 8) | XAxis_L) / 16384.0;
+    //Leitura eixo X_L
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_XL,size_of_bytes_sent);
+    char data_received1[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received1,size_of_bytes_received);     
+    XAxis_L += data_received1[0];
+    float XAxisFull = ((XAxis_H << 8) | XAxis_L) / 16384.0;
      
-//     //Leitura eixo Y_H
-//     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
-//     char data_received2[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received);
-//     YAxis_H += data_received2[0];
+    //Leitura eixo Y_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YH,size_of_bytes_sent);
+    char data_received2[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received2,size_of_bytes_received);
+    YAxis_H += data_received2[0];
     
-//     //Leitura eixo Y_L
-//      bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
-//     char data_received3[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received3,size_of_bytes_received);
-//     YAxis_L += data_received3[0];
-//     float YAxisFull = ((YAxis_H << 8) | YAxis_L) / 16384.0;
+    //Leitura eixo Y_L
+     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_YL,size_of_bytes_sent);
+    char data_received3[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received3,size_of_bytes_received);
+    YAxis_L += data_received3[0];
+    float YAxisFull = ((YAxis_H << 8) | YAxis_L) / 16384.0;
     
-//     //Leitura eixo Z_H
-//     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
-//     char data_received4[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received4,size_of_bytes_received);
-//     ZAxis_H += data_received4[0];
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZH,size_of_bytes_sent);
+    char data_received4[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received4,size_of_bytes_received);
+    ZAxis_H += data_received4[0];
     
-//     //Leitura eixo Z_H
-//     bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
-//     char data_received5[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received5,size_of_bytes_received);
-//     ZAxis_L += data_received5[0];
-//     float ZAxisFull = ((ZAxis_H << 8) | ZAxis_L) / 16384.0 ;
+    //Leitura eixo Z_H
+    bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,read_accelerometer_register_ZL,size_of_bytes_sent);
+    char data_received5[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received5,size_of_bytes_received);
+    ZAxis_L += data_received5[0];
+    float ZAxisFull = ((ZAxis_H << 8) | ZAxis_L) / 16384.0 ;
 
-//     // // Sum all readings
-//     // AccError_X = AccError_X + (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14);
-//     // AccError_Y = AccError_Y + ((atan(-1 * (XAxisFull) / sqrt(pow((YAxisFull), 2) + pow((ZAxisFull), 2))) * 180 / 3.14));
+    // // Sum all readings
+    // AccError_X = AccError_X + (atan(YAxisFull / sqrt(pow(XAxisFull, 2) + pow(ZAxisFull, 2))) * 180 / 3.14);
+    // AccError_Y = AccError_Y + ((atan(-1 * (XAxisFull) / sqrt(pow((YAxisFull), 2) + pow((ZAxisFull), 2))) * 180 / 3.14));
 
-//     c++;
+    c++;
 
-//   }
+  }
 
 
-//     XAxis_H /= 200;
-//     XAxis_L /= 200;
-//     YAxis_H /= 200;
-//     YAxis_L /= 200;
-//     ZAxis_H /= 200;
-//     ZAxis_L /= 200;
+    XAxis_H /= 10;
+    XAxis_L /= 10;
+    YAxis_H /= 10;
+    YAxis_L /= 10;
+    ZAxis_H /= 10;
+    ZAxis_L /= 10;
 
-//     xky_printf("XAxis_H error = %02x\n",XAxis_H);
-//     xky_printf("XAxis_L error = %02x\n",XAxis_L);
-//     xky_printf("YAxis_H error = %02x\n",YAxis_H);
-//     xky_printf("YAxis_L error = %02x\n",YAxis_L);
-//     xky_printf("ZAxis_H error = %02x\n",ZAxis_H);
-//     xky_printf("ZAxis_L error = %02x\n",ZAxis_L);
+    xky_printf("XAxis_H error = %02x\n",XAxis_H);
+    xky_printf("XAxis_L error = %02x\n",XAxis_L);
+    xky_printf("YAxis_H error = %02x\n",YAxis_H);
+    xky_printf("YAxis_L error = %02x\n",YAxis_L);
+    xky_printf("ZAxis_H error = %02x\n",ZAxis_H);
+    xky_printf("ZAxis_L error = %02x\n",ZAxis_L);
 
-// while(1);
+while(1);
 
-// //   //Divide the sum by 200 to get the error value
-// //   AccError_X = AccError_X / 200;
-// //   AccError_Y = AccError_Y / 200;
-// //   c = 0;
+//   //Divide the sum by 200 to get the error value
+//   AccError_X = AccError_X / 200;
+//   AccError_Y = AccError_Y / 200;
+//   c = 0;
 
     
     
 
-//   // Read gyro values 200 times
-//   while (c < 200) {
+  // Read gyro values 200 times
+  while (c < 10) {
 
-//     //=== Read gyroscope data === //
-//     int size_of_bytes_sent = 1;
-//      i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_XH[] = {0x00};
-//     int size_of_bytes_received = 1;
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XH,size_of_bytes_received);
-//     char GyroXH = data_received_gyro_XH[0];
+    //=== Read gyroscope data === //
+    int size_of_bytes_sent = 1;
+     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XH[] = {0x00};
+    int size_of_bytes_received = 1;
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XH,size_of_bytes_received);
+    char GyroXH = data_received_gyro_XH[0];
 
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_XL[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XL,size_of_bytes_received);
-//     char GyroXL= data_received_gyro_XL[0];
-//     float GyroXFull = ((GyroXH << 8) | GyroXL) / 131.0;
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_XL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_XL,size_of_bytes_received);
+    char GyroXL= data_received_gyro_XL[0];
+    float GyroXFull = ((GyroXH << 8) | GyroXL) / 131.0;
 
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_YH[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YH,size_of_bytes_received);
-//     char GyroYH = data_received_gyro_YH[0];
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YH,size_of_bytes_received);
+    char GyroYH = data_received_gyro_YH[0];
 
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_YL[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YL,size_of_bytes_received);
-//     char GyroYL = data_received_gyro_YL[0];
-//     float GyroYFull = ((GyroYH << 8) | GyroYL) / 131.0;
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_YL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_YL,size_of_bytes_received);
+    char GyroYL = data_received_gyro_YL[0];
+    float GyroYFull = ((GyroYH << 8) | GyroYL) / 131.0;
 
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_ZH[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZH,size_of_bytes_received);
-//     char GyroZH = data_received_gyro_ZH[0];
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZH[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZH,size_of_bytes_received);
+    char GyroZH = data_received_gyro_ZH[0];
 
-//     i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
-//     char data_received_gyro_ZL[] = {0x00};
-//     i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZL,size_of_bytes_received);
-//     char GyroZL = data_received_gyro_ZL[0];
-//     float GyroZFull = ((GyroZH << 8) | GyroZL) / 131.0;
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,gyro_address,size_of_bytes_sent);
+    char data_received_gyro_ZL[] = {0x00};
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_gyro_ZL,size_of_bytes_received);
+    char GyroZL = data_received_gyro_ZL[0];
+    float GyroZFull = ((GyroZH << 8) | GyroZL) / 131.0;
 
-//     // Sum all readings
-//     GyroError_X = GyroError_X + (GyroXFull / 131.0);
-//     GyroError_Y = GyroError_Y + (GyroYFull / 131.0);
-//     GyroError_Z = GyroError_Z + (GyroZFull / 131.0);
+    // Sum all readings
+    GyroError_X = GyroError_X + (GyroXFull / 131.0);
+    GyroError_Y = GyroError_Y + (GyroYFull / 131.0);
+    GyroError_Z = GyroError_Z + (GyroZFull / 131.0);
 
-//     c++;
+    c++;
 
-//     xky_printf("GyroError_X: %f\n",GyroError_X);
-//     xky_printf("GyroError_Y: %f\n",GyroError_Y);
-//     xky_printf("GyroError_Z: %f\n",GyroError_Z);
-//   }
+    xky_printf("GyroError_X: %f\n",GyroError_X);
+    xky_printf("GyroError_Y: %f\n",GyroError_Y);
+    xky_printf("GyroError_Z: %f\n",GyroError_Z);
+  }
 
 //   //Divide the sum by 200 to get the error value
 //   GyroError_X = GyroError_X / 200;
@@ -470,86 +454,67 @@ void MPU6505_accelerometer_calculation(){
 // xky_printf("GyroError_Y: %f\n",GyroError_Y);
 // xky_printf("GyroError_Z: %f\n",GyroError_Z);
   
-// }
+}
 
 //***************************Verificação de valores de OFFSET************************************//
 void calculo_OFFSET(){
 
-    //OFFSET = 0
+
     int size_of_bytes_sent = 2;
-    char XA_OFFSET_H[] = {0x06,0x60};
-    char endereco_XA_h[] = {0x06};
+    unsigned char XA_OFFSET_H[] = {0x06,0xFF};
+    unsigned char endereco_XA_h[] = {0x06};
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_H,size_of_bytes_sent);
+    int size_of_bytes_received = 1;
+    unsigned char data_received_offset_1[] = {0x00};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_XA_h,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_1,size_of_bytes_received);     
+    xky_printf("XA_OFFSET_H = %02x\n",data_received_offset_1[0]);
 
-    char XA_OFFSET_L[] = {0x07,0x8F};
-    i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_L,size_of_bytes_sent);
+    unsigned char XA_OFFSET_L[] = {0x07,0xFF};
+   i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_L,size_of_bytes_sent);
+    size_of_bytes_received = 1;
+    unsigned char data_received_offset_2[] = {0x00};
+    unsigned char endereco_XA_l[] = {0x07};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_XA_l,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
+    xky_printf("XA_OFFSET_L = %02x\n",data_received_offset_2[0]);
 
-    char YA_OFFSET_H[] = {0x08,0X02};
+    unsigned char YA_OFFSET_H[] = {0x08,0XFF};
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_H,size_of_bytes_sent);
+    size_of_bytes_received = 1;
+    unsigned char data_received_offset_3[] = {0x00};
+    unsigned char endereco_YA_h[] = {0x08};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_YA_h,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
+    xky_printf("YA_OFFSET_H = %02x\n",data_received_offset_3[0]);
 
-    char YA_OFFSET_L[] = {0x09,0X04};
+    unsigned char YA_OFFSET_L[] = {0x09,0XFF};
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_L,size_of_bytes_sent);
+    size_of_bytes_received = 1;
+    unsigned char data_received_offset_4[] = {0x00};
+    unsigned char endereco_YA_L[] = {0x09};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_YA_L,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
+    xky_printf("YA_OFFSET_L = %02x\n",data_received_offset_4[0]);
 
-    char ZA_OFFSET_H[] = {0x0A,0X60};
+    unsigned char ZA_OFFSET_H[] = {0x0A,0XFF};
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_H,size_of_bytes_sent);
+    size_of_bytes_received = 1;
+    unsigned char data_received_offset_5[] = {0x00};
+    unsigned char endereco_ZA_h[] = {0x0A};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_ZA_h,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_5,size_of_bytes_received);     
+    xky_printf("ZA_OFFSET_H = %02x\n",data_received_offset_5[0]);
 
-    char ZA_OFFSET_L[] = {0x0B,0X7D};
+    unsigned char ZA_OFFSET_L[] = {0x0B,0XFF};
     i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_L,size_of_bytes_sent);
+    size_of_bytes_received = 1;
+    unsigned char data_received_offset_6[] = {0x00};
+    unsigned char endereco_ZA_l[] = {0x0B};
+    i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_ZA_l,1);
+    i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_6,size_of_bytes_received);     
+    xky_printf("ZA_OFFSET_H = %02x\n",data_received_offset_6[0]);
 
-    // int size_of_bytes_sent = 2;
-    // char XA_OFFSET_H[] = {0x06,0x7F};
-    // char endereco_XA_h[] = {0x06};
-    // int bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_H,size_of_bytes_sent);
-    // int size_of_bytes_received = 1;
-    // char data_received_offset_1[] = {0x00};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_XA_h,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_1,size_of_bytes_received);     
-    // xky_printf("XA_OFFSET_H = %02x\n",data_received_offset_1[0]);
-
-    // char XA_OFFSET_L[] = {0x07,0xFF};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,XA_OFFSET_L,size_of_bytes_sent);
-    // size_of_bytes_received = 1;
-    // char data_received_offset_2[] = {0x00};
-    // char endereco_XA_l[] = {0x07};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_XA_l,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
-    // xky_printf("XA_OFFSET_L = %02x\n",data_received_offset_2[0]);
-
-    // char YA_OFFSET_H[] = {0x08,0X7F};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_H,size_of_bytes_sent);
-    // size_of_bytes_received = 1;
-    // char data_received_offset_3[] = {0x00};
-    // char endereco_YA_h[] = {0x08};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_YA_h,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
-    // xky_printf("YA_OFFSET_H = %02x\n",data_received_offset_3[0]);
-
-    // char YA_OFFSET_L[] = {0x09,0XFF};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,YA_OFFSET_L,size_of_bytes_sent);
-    // size_of_bytes_received = 1;
-    // char data_received_offset_4[] = {0x00};
-    //  char endereco_YA_L[] = {0x09};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_YA_L,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_2,size_of_bytes_received);     
-    // xky_printf("YA_OFFSET_L = %02x\n",data_received_offset_4[0]);
-
-    // char ZA_OFFSET_H[] = {0x0A,0X7F};
-    //  bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_H,size_of_bytes_sent);
-    //  size_of_bytes_received = 1;
-    // char data_received_offset_5[] = {0x00};
-    //  char endereco_ZA_h[] = {0x0A};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_ZA_h,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_5,size_of_bytes_received);     
-    // xky_printf("ZA_OFFSET_H = %02x\n",data_received_offset_5[0]);
-
-    // char ZA_OFFSET_L[] = {0x0B,0XFF};
-    //  bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,ZA_OFFSET_L,size_of_bytes_sent);
-    //  size_of_bytes_received = 1;
-    // char data_received_offset_6[] = {0x00};
-    // char endereco_ZA_l[] = {0x0B};
-    // bytes_sent=i2c_master_send(i2c_instance,accelerometer_sensor_addr,endereco_ZA_l,1);
-    // i2c_master_receive(i2c_instance,accelerometer_sensor_addr,data_received_offset_6,size_of_bytes_received);     
-    // xky_printf("ZA_OFFSET_H = %02x\n",data_received_offset_6[0]);
-
+    while(1);
 
 }
